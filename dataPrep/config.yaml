@@ -1,0 +1,102 @@
+# Configuration for the preprocessing pipeline
+
+# Absolute base directory where all intermediate and final CSVs are written
+io:
+  base_dir: "_PATH_TO_SAVE_OUTPUT_FILES_"
+  download_csv: "data.csv"
+  filtered_csv: "data_filtered.csv"
+  zero_shot_csv: "data_filtered_zero_shot.csv"
+  processed_csv: "data_filtered_zero_shot_chunk.csv"
+  text_column: "text"
+
+# Step 1: Download tiny Italian clean mc4 subset to CSV
+download:
+  hf_dataset: "amitness/wikipedia_it"
+  config_name: "" # specify tiny if downloading gsarti/clean_mc4_it
+  split: "train[:10%]"
+  streaming: false
+  # Optional: provide an absolute path to a pre-downloaded CSV to skip Hugging Face download
+  # The CSV must contain a column named as in `io.text_column` (default: "text")
+  local_csv: false
+
+# Step 2: Keyword-based prefiltering
+keyword_filter:
+  chunk_size: 100000
+  keywords:
+    - "omicidio"
+    - "assassinio"
+    - "femminicidio"
+    - "aggressione"
+    - "lesioni personali"
+    - "violenza sessuale"
+    - "stupro"
+    - "omicidio colposo"
+    - "tentato omicidio"
+    - "furto"
+    - "rapina"
+    - "scasso"
+    - "borseggio"
+    - "effrazione"
+    - "spaccio di droga"
+    - "traffico di stupefacenti"
+    - "detenzione di droga"
+    - "riciclaggio di denaro"
+    - "corruzione"
+    - "estorsione"
+    - "truffa"
+    - "usura"
+    - "frode fiscale"
+    - "evasione fiscale"
+    - "appropriazione indebita"
+    - "pedofilia"
+    - "abuso su minori"
+    - "pornografia minorile"
+    - "crimine organizzato"
+    - "associazione mafiosa"
+    - "mafia"
+    - "camorra"
+    - "ndrangheta"
+    - "terrorismo"
+    - "attentato terroristico"
+    - "radicalizzazione"
+    - "cellula terroristica"
+    - "sequestro di persona"
+    - "minacce"
+    - "intimidazione"
+    - "latitante"
+    - "indagine penale"
+    - "procedimento penale"
+    - "arresto"
+    - "carcere"
+    - "custodia cautelare"
+
+# Step 3: Zero-shot filtering on GPU
+zero_shot:
+  model_name: "facebook/bart-large-mnli"
+  device: 0 # Prefer cuda:3
+  chunk_size: 1000
+  batch_size: 8
+  labels: ["crimine", "non crimine"]
+  hypothesis_template: "Questo testo riguarda {}."
+
+# Step 4: Sentence chunking with token limits
+process:
+  spacy_model: "it_core_news_lg"
+  tokenizer_name: "intfloat/multilingual-e5-large"
+  chunksize: 100
+  max_tokens: 250
+  min_tokens: 2 # You should change it to 80 tokens if mode is chunks
+  output_column: "sentence1"
+  auto_download_spacy_model: true
+  # Processing mode: "chunks" (group sentences into token-limited chunks) or "sentences" (individual sentences)
+  mode: "sentences" # Options: "chunks", "sentences"
+
+# General controls
+general:
+  force: false # If true, redo steps even if outputs exist
+  # Steps to run when CLI --steps is not provided (boolean flags)
+  steps:
+    download: true # It should always be true
+    keyword_filter: false
+    zero_shot: false
+    process: true

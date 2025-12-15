@@ -1,0 +1,8 @@
+transformers==4.56.0
+datasets==2.21.0
+spacy==3.8.7
+PyYAML==6.0.2
+pandas==2.3.2
+tqdm==4.67.1
+torch==2.8.0
+hf_xet==1.1.9
